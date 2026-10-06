@@ -47,6 +47,12 @@ Phase 6a Tool Surface 是 AgentBackend 的唯一内部工具面：统一 DSA 工
 
 `opencode_cli` 是 experimental/limited generation backend，不支持 OpenCode serve / web / ACP / MCP / attach / `--dangerously-skip-permissions`。DSA 默认使用本机 OpenCode 的默认模型；`OPENCODE_CLI_MODEL` 只是可选模型覆盖值，配置时才传给 OpenCode `--model`。DSA 会在临时 cwd 写入最小项目 `opencode.json`，但 OpenCode resolved config 仍可能包含用户本机全局配置；运行时安全边界同时依赖 `--pure`、env denylist、prompt file 权限和 event extractor fail-closed。
 
+## 本地 Codex 生成报告
+
+使用本地 Codex 生成报告时，在运行 DSA 的同一设备安装并登录 Codex，设置 `GENERATION_BACKEND=codex_cli`。若无需 API 回退，本地 `.env` 设置 `GENERATION_FALLBACK_BACKEND=`。CLI 子进程继承标准代理变量 `HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY`、`NO_PROXY`（含小写形式），因此可复用设备已有代理；API Key 和通知令牌仍不会传入子进程。GitHub 托管 runner 不会继承本机 Codex 登录，需另外配置运行设备和认证。
+
+Linux/macOS 在项目目录准备 `.venv` 并安装 `requirements.txt` 后，可运行 `bash scripts/run-codex-report.sh`。脚本通过现有入口生成大盘报告，关闭 API 回退、Agent 模式与通知；输出仍保存在 `reports/`。分析自选股票可传入 `--stocks <逗号分隔代码> --no-market-review`，休市日验证可传入 `--market-review --force-run`。脚本使用当前设备的 Codex 登录和模型配置，不写入或复制登录凭据。
+
 ## Web 设置页路径
 
 推荐优先使用 Web 设置页完成 Channels 配置：

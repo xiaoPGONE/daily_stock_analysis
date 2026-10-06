@@ -1421,6 +1421,29 @@ def test_env_allowlist_and_denylist(monkeypatch) -> None:
     assert "AUTHORIZATION" not in child_env
 
 
+@pytest.mark.parametrize(
+    "name",
+    ["HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "all_proxy", "no_proxy"],
+)
+def test_generate_preserves_network_proxy_without_provider_credentials(
+    monkeypatch, tmp_path: Path, name: str,
+) -> None:
+    value = "localhost,127.0.0.1" if name.upper() == "NO_PROXY" else "http://proxy.example:8080"
+    monkeypatch.setenv(name, value)
+    monkeypatch.setenv("OPENAI_API_KEY", "must-not-reach-child")
+    monkeypatch.setenv("WEBHOOK_TOKEN", "must-not-reach-child")
+    backend = _backend(
+        tmp_path,
+        "import json, os; print(json.dumps({key: os.environ.get(key) for key in "
+        + repr([name, "OPENAI_API_KEY", "WEBHOOK_TOKEN"])
+        + "}))",
+    )
+
+    result = backend.generate("proxy inheritance test", {})
+
+    assert json.loads(result.text) == {name: value, "OPENAI_API_KEY": None, "WEBHOOK_TOKEN": None}
+
+
 def test_env_allowlist_preserves_windows_runtime_context() -> None:
     source = {
         "Path": r"C:\Users\tester\AppData\Local\Microsoft\WindowsApps",
